@@ -1,0 +1,46 @@
+---
+title: ""
+author: "Duc-Quang Nguyen | swissinfo.ch"
+date: " 2017"
+output: 
+  html_document:
+    toc: true
+    toc_depth: 3
+    theme: simplex
+---
+## Txt
+
+#### Snippets
+
+## Data
+
+## Related
+
+* [538 europe terrorism](https://fivethirtyeight.com/features/the-rise-of-religiously-inspired-terrorism-in-france/)
+* [538 global terrorism](http://fivethirtyeight.com/features/global-terrorism-declined-last-year-but-not-in-the-west/)
+* [538 fireamrs US](https://fivethirtyeight.com/features/gun-deaths-terrorism/)
+
+
+```{r setup, include=FALSE}
+data.file <- "data/globalterrorismdb_0617dist.xlsx"
+
+options(tibble.width = Inf)
+library(tidyverse)
+library(magrittr)
+library(countrycode)
+library(swiMap)
+library(swiTheme)
+
+### Getting data in packages
+library(readxl)
+
+```
+
+```{r data load & wrangle}
+xls.read <- read_excel(data.file)
+
+columns_keep <- c("eventid", "iyear","imonth","iday",'country', 'country_txt', 'region', 'latitude', 'longitude', 'location', 
+                  'summary', 'crit1', 'crit2', 'crit3','doubtterr', 'attacktype1', 'attacktype1_txt')
+
+
+```
