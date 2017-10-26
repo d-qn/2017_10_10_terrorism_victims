@@ -8,39 +8,208 @@ output:
     toc_depth: 3
     theme: simplex
 ---
+## Ideas
+
+1. terrorism fell in 2016, both in °attacks and death
+2. small multiples by region, largely a decrease in 2016 for middle east
+3. Map world animated
+
+* [RTS](http://www.rts.ch/info/monde/9016433-le-terrorisme-tue-vingt-fois-plus-en-afrique-qu-en-europe.html)
+* [538 europe terrorism](https://fivethirtyeight.com/features/the-rise-of-religiously-inspired-terrorism-in-france/)
+
+* Mainly similar to this [538 story](https://fivethirtyeight.com/features/global-terrorism-declined-last-year-but-not-in-the-west/) 
+  * Focus europe vs rest of the world
+    * number of attacks, deaths, hostage, weapons,
+    
+* Total deaths by region    
+    
+*     
+  
+  
+
 ## Txt
 
 #### Snippets
 
 ## Data
 
+* GTD: 1970 through 2016 (with additional annual updates planned for the future). Unlike many other event databases, the GTD includes systematic data on domestic as well as transnational and international terrorist incidents that have occurred during this time period and now includes more than 170,000 cases. 
+
+* From [538](https://fivethirtyeight.com/features/global-terrorism-declined-last-year-but-not-in-the-west/) The GTD tracks terrorist attacks since 1970. But the long-term trend in terrorism is difficult to interpret because of changes to its data collection methodology that began in 2012. Those changes included using semi-automated techniques in parsing through news sources. Thousands of news stories about potential terrorist incidents are filtered by computer analysis to a few hundred that are read by GTD staff, before being coded into the database. As a result of the methodology changes, the number of terrorism incidents recorded in the GTD skyrocketed: from about 5,000 attacks in 2011 to 12,000 in 2013. Because the new automated techniques collected many more possible terror incidents, it added more events to the database than usual.
+
+This period also coincided with a resurgence in terrorist activity — in particular, the emergence of ISIS and escalating attacks from Boko Haram. “This is a reflection of real trends in violence — and also our increasing ability to collect data,” Miller said. Because the historical time trend is not an apples-to-apples comparison, “we urge caution in interpreting year-over-year trends,” she said.
+
+
+* [Luxor 36 Swiss casualities](https://en.wikipedia.org/wiki/Luxor_massacre)
+
 ## Related
 
+* [GTD 45 years terrorism map](https://www.start.umd.edu/gtd/images/START_GlobalTerrorismDatabase_TerroristAttacksConcentrationIntensityMap_45Years.png)
 * [538 europe terrorism](https://fivethirtyeight.com/features/the-rise-of-religiously-inspired-terrorism-in-france/)
 * [538 global terrorism](http://fivethirtyeight.com/features/global-terrorism-declined-last-year-but-not-in-the-west/)
 * [538 fireamrs US](https://fivethirtyeight.com/features/gun-deaths-terrorism/)
+* [WP dataviz](https://i.pinimg.com/originals/4f/9a/a9/4f9aa98b4dcefe4acbeff544cadb571f.png)
+* [maps](http://redlabs.co/index.php/portfolio/globalterrorism/)
+* [ESRI map](https://medium.com/@Esri/new-global-terrorism-map-shows-35-years-of-terror-incidents-9cc3d67295bf)
+* [Deaths by terrorism, 2000-2015 time lapse](http://projects.oregonlive.com/terrorism/time-lapse/)
 
+## Code
 
+* [animated map ](http://jkunst.com/highcharter/highmaps.html)
 ```{r setup, include=FALSE}
-data.file <- "data/globalterrorismdb_0617dist.xlsx"
+load_raw_data <- F
+print_stats_summary <- T
+
+raw_data.file <- "data/globalterrorismdb_0617dist.xlsx"
+data.file <- "input/GTD_0617dist.csv"
 
 options(tibble.width = Inf)
 library(tidyverse)
 library(magrittr)
+library(forcats)
+library(knitr)
 library(countrycode)
 library(swiMap)
 library(swiTheme)
 
 ### Getting data in packages
 library(readxl)
-
 ```
 
-```{r data load & wrangle}
-xls.read <- read_excel(data.file)
+```{r data load & wrangle, echo = F}
+# some column subsets
+columns_keep <- c("eventid", "iyear","imonth","iday",'country', 'country_txt', 'region', 'region_txt', 'latitude', 'longitude', 'location', 
+                  'summary', 'crit1', 'crit2', 'crit3','doubtterr', 
+                  'attacktype1', 'attacktype1_txt',
+                  "targtype1", "targtype1_txt", "corp1", "target1", "natlty1",  "natlty1_txt", "natlty1",
+                  "natlty2", "natlty2_txt",  "natlty3", "natlty3_txt",
+                  "gname", 'individual',
+                  "weaptype1", "weaptype1_txt",
+                  "nkill", "nkillter", "nwound","nwoundte", 
+                  "property", 'propvalue',
+                  'ishostkid', 'nhostkid'
+                  )
+columns_min <- c(
+  "iyear","imonth","iday", 'country_txt',  'summary', 'attacktype1_txt', "targtype1_txt", "corp1", 
+  "natlty1_txt", "natlty2_txt", "natlty3_txt", "weaptype1_txt","nkill","nwound"
+)
 
-columns_keep <- c("eventid", "iyear","imonth","iday",'country', 'country_txt', 'region', 'latitude', 'longitude', 'location', 
-                  'summary', 'crit1', 'crit2', 'crit3','doubtterr', 'attacktype1', 'attacktype1_txt')
+if(load_raw_data) {
+  data <- read_excel(raw_data.file) %>% select(columns_keep)
+  data %>% write_csv(data.file)
+} else {
+  data <- read_csv(data.file) %>% select(columns_keep)
+}
+stopifnot(nrow(data) >=170350)
+
+# get the list of coutries
+countries <- data %>% select(country, country_txt) %>% 
+  distinct() %>% arrange(country) 
+
+regions <- data %>% select(region, region_txt) %>% 
+  distinct() %>% arrange(region) 
+
+data %<>% select(-region_txt)
+```
+
+
+## Table summary
+```{r explore, results = "asis"}
+if(print_stats_summary) {
+  data %>% filter(natlty1_txt == "Switzerland") %>% nrow()
+  
+  data %>% filter(natlty1_txt == "Switzerland") %>% arrange(desc(nkill)) %>% 
+    select(columns_min, -natlty2_txt, -natlty3_txt  ) %>% head(10) %>% kable() # %>% View()
+  
+  data %>% filter(iyear == 1997 & imonth == 11 & country_txt == "Egypt") %>% 
+    select(columns_min) %>% kable()
+}
+```
+```{r total death by region}
+dd <- data %>% filter(nkill >= 1) 
+
+dd1 <- dd %>% group_by(iyear, region) %>%
+  summarise(death = sum(nkill), attacks = length(nkill), wound = sum(nwound)) %>%
+  left_join(regions)
+
+## total deaths and attacks
+dd2 <- data %>% group_by(iyear) %>%
+   summarise(death = sum(nkill, na.rm = T), attacks = length(nkill), sum(nwound, na.rm = T)) %>%
+  ungroup() %>% gather(key = "type", value = "value", -iyear)
+
+ggplot(dd2) + geom_line(aes(x = iyear, y = value, group = type)) + 
+  swi_theme()
+
+ggplot(dd2 %>% filter(iyear >= 2012)) + geom_line(aes(x = iyear, y = value, group = type)) + 
+  swi_theme()
+
+top_death_byregion <- dd1 %>% group_by(region) %>% 
+  summarise(tot = sum(death)) %>% 
+  arrange(desc(tot))
+
+region.sub <- top_death_byregion %>% head(9) %>% .$region
+
+ggplot(dd1) + geom_area(aes(x = iyear, y = death, group = region_txt)) + 
+  facet_wrap(~region_txt) + swi_theme()
+
+## aggregate
+dd2 <- dd1 %>% mutate(reg = ifelse(region %in% region.sub, region, 99)) %>%
+  group_by(iyear, reg) %>%
+  summarise(death = sum(death)) %>% ungroup() %>% 
+  rename(region = reg) %>%
+  left_join(regions)
+  
+dd2 %>% ggplot() + geom_area(aes(x = iyear, y = death, group = region_txt)) + 
+  facet_wrap(~region_txt, ncol = 3) + swi_theme()
+
+top_death_byregion2 <- dd1 %>% filter(iyear >= 2012) %>% 
+  group_by(region) %>% 
+  summarise(tot = sum(death)) %>% 
+  arrange(desc(tot))
+
+region.sub2 <- top_death_byregion2 %>% head(9) %>% .$region
+dd3 <- dd1 %>% filter(iyear >= 2012) %>%
+  mutate(reg = ifelse(region %in% region.sub2, region, 99)) %>%
+  group_by(iyear, reg) %>%
+  summarise(death = sum(death)) %>% ungroup() %>% 
+  rename(region = reg) %>%
+  left_join(regions)
+
+dd3 %>% 
+  ggplot() + geom_area(aes(x = iyear, y = death, 
+                           group = fct_reorder(region_txt, death, fun = sum, na.rm =T))) + 
+  facet_wrap(~region_txt, ncol = 3) + swi_theme()
+
+## 
+if(print_stats_summary) {
+  # data %>% filter(region == 11, iyear >= 2012) %>%
+  #   arrange(desc(nkill)) %>%
+  #   select(iyear, imonth, iday, country_txt)
+  
+  for(reg in region.sub2) {
+    coutries_sub <- data %>% filter(region == reg, iyear >= 2012) %>%
+      group_by(country_txt) %>%
+      summarise(tot = sum(nkill, na.rm = T)) %>%
+      ungroup() %>%
+      arrange(desc(tot)) %>%
+      head(9) %>% .$country_txt  
+    
+    gp <- data %>% filter(country_txt %in% coutries_sub, iyear >= 2012) %>%
+      group_by(country_txt, iyear) %>%
+      summarise(tot = sum(nkill, na.rm = T)) %>% 
+      ungroup() %>%
+      ggplot() + 
+      geom_area(aes(x = iyear, y = tot, 
+                    group = fct_reorder(country_txt, tot, fun = sum, na.rm =T))) + 
+      facet_wrap(~country_txt, ncol = 3) + swi_theme()
+    print(gp)
+  }  
+}
+```
+
+
+```{r map}
+library(highcharter)
 
 
 ```

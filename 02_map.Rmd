@@ -1,0 +1,211 @@
+---
+title: ""
+author: "Duc-Quang Nguyen | swissinfo.ch"
+date: " 2016"
+output: 
+  html_document:
+    toc: true
+    toc_depth: 3
+    theme: simplex
+---
+
+# Hexmap in R
+
+* [ggplot2](http://unconj.ca/blog/custom-hexbin-functions-with-ggplot.html)
+* [](http://santiago.begueria.es/2016/04/mapping-with-ggplot2-hexbin-maps/)
+
+```{r setup, include=FALSE}
+data.file <- "input/GTD_0617dist.csv"
+
+cleanOutput <- F
+
+library(tidyverse)
+library(magrittr)
+library(stringr)
+library(knitr)
+library(countrycode)
+library(swiMap)
+library(swiTheme)
+
+### Interactive 
+library(htmltools)
+library(swiRcharts)
+library(highcharter)
+
+### Mapping 
+require(rgdal)
+require(rgeos)
+require(maptools)
+### Misc stuff
+require(viridis)
+```
+
+```{r load, echo=F}
+data <- read_csv(data.file) 
+
+# get the list of coutries
+countries <- data %>% select(country, country_txt) %>% 
+  distinct() %>% arrange(country) 
+
+regions <- data %>% select(region, region_txt) %>% 
+  distinct() %>% arrange(region) 
+
+data %<>% select(-region_txt)
+
+# load world map data
+world <- map_data("world") %>% filter(region != "Antarctica")
+#world <- world[!world$region %in% c("Antarctica", "Lesotho"),] # intercourse antarctica
+#world %<>% filter(region != "South Africa" | (region == "South Africa" & (subregion != "hole" | is.na(subregion)))
+```
+
+```{r animated map}
+library(ggrepel)
+library(gganimate)
+
+dm <- data %>% filter(iyear >= 2012, nkill > 0, !is.na(longitude)) %>% 
+  select(iyear, imonth, iday, country_txt, latitude, longitude, nkill) %>%
+  rename(lat = latitude, lon = longitude, z = nkill)
+
+dm %<>% mutate(
+  date = str_c(iyear, imonth, iday, sep = "-") %>% as.Date(),
+  yearMonth = str_c(iyear, imonth, sep = "-")
+) %>% as.data.frame()
+rownames(dm) <- 1:nrow(dm)
+
+xlim <- quantile(dm$lon, probs = c(0, .99), na.rm = T) + c(0, 5)
+#xlim <- c(-124, 153)
+ylim <- quantile(dm$lat, probs = c(0, 1), na.rm = T)
+
+
+top_countries <- dm %>% group_by(country_txt) %>%
+  summarise(tot = sum(z)) %>% ungroup() %>%
+  arrange(desc(tot)) %>% head(20) %>% .$country_txt
+labels <- dm %>% filter(country_txt %in% top_countries) %>%
+  group_by(country_txt) %>%
+  summarise(lat = mean(lat), lon = mean(lon)) %>%
+  ungroup()
+  
+labels %<>% filter(
+  country_txt %in%
+  c("Iraq", "Afghanistan", "Nigeria", "Syria", "Pakistan", "Yemen", "Somalia", "Libya", "India", "Philippines", "Ukraine",  "South Sudan", "Egypt"))
+
+
+ggplot() + 
+  swi_dark_map() + 
+  coord_map(xlim = xlim, ylim = ylim, projection = "gilbert") + 
+  geom_jitter(data = dm, aes(x = lon, y= lat, size = z, colour = z), 
+              alpha=0.25, stroke = 0) +
+   geom_map(
+  data=world, map=world,
+  aes(x=long, y=lat, map_id=region, group = 1),
+  color="#4d4d4d", fill= "#24a8a8", size = 0.15, alpha=0.15) + 
+  scale_size_continuous(
+    trans = "log1p", range = c(10^-6, 8), breaks = c(10, 100, 1000), 
+    guide = guide_legend(override.aes = list(colour = "#f7eeed"))) +
+  scale_colour_continuous(
+    low = "#6a332f", high = "#f7eeed", trans = "log1p", guide = F) + 
+  theme(
+    legend.key.size = unit(1, "lines"),
+    legend.position = c(0.85,0.12),
+    legend.box.background = element_rect(size = 0, fill = "black"),
+    plot.title = element_text(margin = margin(t = 10, b = -20, l = 3))
+  ) + 
+  geom_text_repel(data=labels, aes(x = lon, y = lat, label = country_txt), colour = "white", segment.alpha = 0.3,  alpha = 0.5, nudge_x = -7, nudge_y = -5)
+
+
+
+# ggplot() + 
+#   geom_map(
+#   data=world, map=world,
+#   aes(x=long, y=lat, map_id=region, group = 1),
+#   color="#262626", fill= "#333333", size = 0.5, alpha=1) + 
+#   swi_dark_map() + 
+#   coord_map(xlim = xlim, ylim = ylim, projection = "gilbert") + 
+#   geom_jitter(data = dm, aes(x = lon, y= lat, size = z, colour = z), 
+#               alpha=0.25, stroke = 0) +
+#   scale_size_continuous(
+#     trans = "log1p", range = c(10^-6, 8), breaks = c(1, 10, 100, 1000), 
+#     guide = guide_legend(override.aes = list(colour = "#f7eeed"))) +
+#   scale_colour_continuous(
+#     low = "#6a332f", high = "#f7eeed", trans = "log1p", guide = F) + 
+#   theme(
+#     legend.key.size = unit(1, "lines"),
+#     legend.position = c(0.1,1)
+# 
+#     ) + 
+#   geom_text_repel(data=labels, aes(x = lon, y = lat, label = country_txt), colour = "white", segment.alpha = 0.3,  alpha = 0.5, nudge_x = -7, nudge_y = -5)
+
+
+
+p <- ggplot() + 
+  swi_dark_map() + 
+  coord_map(xlim = xlim, ylim = ylim, projection = "gilbert") + 
+  geom_jitter(data = dm, aes(x = lon, y= lat, size = z, colour = z, frame = yearMonth, cumulative = T), 
+              alpha=0.15, stroke = 0) +
+  geom_map(
+    data=world, map=world,
+    aes(x=long, y=lat, map_id=region, group = 1),
+    color="#4d4d4d", fill= "#24a8a8", size = 0.15, alpha=0.15
+  ) + 
+  scale_size_continuous(
+    trans = "log1p", range = c(10^-6, 8), breaks = c(10, 100, 1000), 
+    guide = guide_legend(override.aes = list(colour = "#f7eeed"))) +
+  scale_colour_continuous(
+    low = "#6a332f", high = "#f7eeed", trans = "log1p", guide = F) + 
+  theme(
+    legend.key.size = unit(1, "lines"),
+    legend.position = c(0.85,0.12),
+    legend.box.background = element_rect(size = 0, fill = "black"),
+    plot.title = element_text(margin = margin(t = 10, b = -22, l = 5))
+    ) + 
+  geom_text_repel(data=labels, aes(x = lon, y = lat, label = country_txt), colour = "white", segment.alpha = 0.3,  alpha = 0.5, nudge_x = -7, nudge_y = -5)
+
+
+# p <- ggplot() + geom_map(
+#   data=world, map=world,
+#   aes(x=long, y=lat, map_id=region),
+#   color="#262626", fill= "#333333", size=0.3, alpha=1) + 
+#   swi_dark_map() + 
+#   coord_quickmap(xlim = xlim, ylim = ylim) + 
+#   geom_jitter(data = dm, aes(x = lon, y= lat, size = z, colour = z, frame = yearMonth, cumulative = TRUE), alpha=0.15, stroke = 0) +
+#   scale_size_continuous(trans = "log1p", range = c(10^-2, 4), breaks = c(1, 10, 100, 1000), guide = guide_legend(override.aes = list(colour = "#f7eeed"))) +
+#   scale_colour_continuous(low = "#6a332f", high = "#f7eeed", trans = "log1p", 
+#                           guide = F)
+
+gganimate(p, "deaths_terrorism_map.gif", ani.width = 660 * 1.8 , ani.height = 660 * 1, interval = 0.3)
+
+```
+
+```{r hexgrid map}
+dm.expanded <- dm[rep(row.names(dm), dm$z), ]
+sum(dm$z[which(dm$z > 1)]) + nrow(dm)
+
+  
+ggplot(dm.expanded %>% filter(iyear == 2016), aes(x=lon,y=lat)) + 
+  stat_binhex(bins=100) + 
+  scale_fill_viridis(trans = "log")
+
+```
+
+
+
+```{r move production graphics}
+if(cleanOutput) {
+  files <- c("basename_.*html", "js")
+
+  if(!dir.exists("output/bak")) {
+    dir.create("output/bak")
+  } else {
+    list.files("output/bak/", full.names = T, recursive = T) %>% file.remove()
+  }
+  ori.files <- list.files("output", full.names = T)[list.files("output") != "bak"]
+  file.copy(ori.files, to = "output/bak/", recursive = T)
+  unlink(ori.files, recursive = T)
+
+  files_tomove <- lapply(files, function(x) list.files(pattern = x)) %>% unlist()
+  file.copy(files_tomove, "output", recursive = T)
+  unlink(files_tomove, recursive = T)
+}
+
+
+```
