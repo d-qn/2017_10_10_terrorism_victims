@@ -60,7 +60,7 @@ world <- map_data("world") %>% filter(region != "Antarctica")
 
 ```{r animated map}
 library(ggrepel)
-library(gganimate)
+library(animation)
 
 dm <- data %>% filter(iyear >= 2012, nkill > 0, !is.na(longitude)) %>% 
   select(iyear, imonth, iday, country_txt, latitude, longitude, nkill) %>%
@@ -68,9 +68,20 @@ dm <- data %>% filter(iyear >= 2012, nkill > 0, !is.na(longitude)) %>%
 
 dm %<>% mutate(
   date = str_c(iyear, imonth, iday, sep = "-") %>% as.Date(),
-  yearMonth = str_c(iyear, imonth, sep = "-")
+  yearMonth = format(date, "%Y-%m"),
+  
 ) %>% as.data.frame()
 rownames(dm) <- 1:nrow(dm)
+
+deathsByMonth <- dm %>% group_by(yearMonth) %>% 
+  summarise(
+    monthtot = sum(z)
+  ) %>% 
+  ungroup() %>%
+  mutate(
+    tot = cumsum(monthtot),
+    label = paste0("Morts: ", monthtot, " (depuis 2012: ", tot, ")")
+  )
 
 xlim <- quantile(dm$lon, probs = c(0, .99), na.rm = T) + c(0, 5)
 #xlim <- c(-124, 153)
@@ -79,7 +90,8 @@ ylim <- quantile(dm$lat, probs = c(0, 1), na.rm = T)
 
 top_countries <- dm %>% group_by(country_txt) %>%
   summarise(tot = sum(z)) %>% ungroup() %>%
-  arrange(desc(tot)) %>% head(20) %>% .$country_txt
+  arrange(desc(tot)) %>% head(30) %>% .$country_txt
+
 labels <- dm %>% filter(country_txt %in% top_countries) %>%
   group_by(country_txt) %>%
   summarise(lat = mean(lat), lon = mean(lon)) %>%
@@ -87,14 +99,77 @@ labels <- dm %>% filter(country_txt %in% top_countries) %>%
   
 labels %<>% filter(
   country_txt %in%
-  c("Iraq", "Afghanistan", "Nigeria", "Syria", "Pakistan", "Yemen", "Somalia", "Libya", "India", "Philippines", "Ukraine",  "South Sudan", "Egypt"))
+  c("Iraq", "Afghanistan", "Nigeria", "Syria", 
+    "Pakistan", "Yemen", "Somalia", "Libya", "India", 
+    "Philippines", "Ukraine",  "South Sudan", "Egypt", 
+    "Colombia")) #"Cameroon", "Turkey"))
+
+
+ym <- "2014-01"
+
+plotSingleTime <- function(dm, labels, ym, txt) {
+  
+  dd <- dm %>% filter(yearMonth == ym)
+  bg <- dm %>% filter(yearMonth < ym)
+  stats.label <- deathsByMonth %>% filter(yearMonth == ym)
+  
+  p <- ggplot() + 
+    swi_dark_map(base_size = 20) + 
+    geom_map(
+      data=world, map=world,
+      aes(x=long, y=lat, map_id=region),
+      color="#333333", fill= "#262626", size=0.4, alpha=0.9) +
+    coord_map(xlim = xlim, ylim = ylim, projection = "gilbert") + 
+    geom_jitter(data = bg, aes(x = lon, y= lat, size = z, alpha = as.numeric(date)), 
+                stroke = 0, colour = "#6a332f") +
+    geom_jitter(data = dd, aes(x = lon, y= lat, size = z), 
+                alpha=0.5, stroke = 0, colour = "#d09995") +
+    annotate(
+      geom = "text", x = 0, y = 40, label = ym, colour = "lightgrey",
+      alpha = 0.1, size = 50, hjust = 0.5, vjust = 0.5
+    ) +
+    # geom_map(
+    #   data=world, map=world,
+    #   aes(x=long, y=lat, map_id=region, group = 1),
+    #   color="#4d4d4d", fill= "#24a8a8", size = 0.2, alpha=0.1
+    # ) + 
+    scale_size_continuous(
+      trans = "log1p", range = c(10^-6, 7), 
+      breaks = c(10, 100, 1000), limits = range(dm$z), 
+      guide = guide_legend(override.aes = list(fill = "#d09995"))) +
+    scale_alpha_continuous(range = c(0.05, 0.35), guide = F) +
+    theme(
+      legend.key.size = unit(1, "lines"),
+      legend.position = c(0.85,0.12),
+      legend.box.background = element_rect(size = 0, fill = "black"),
+      plot.title = element_text(margin = margin(t = 7, b = -10, l = -10)),
+      plot.subtitle = element_text(margin = margin(t = 20, b = -60, l = -10)),
+      plot.margin = unit(c(0.5, 0.2, 0, 0), "cm")
+    ) + 
+    geom_text_repel(
+      data = labels, aes(x = lon, y = lat, label = country_txt), 
+      colour = "white", segment.alpha = 0.3,
+      alpha = 0.5, nudge_x = -8, nudge_y = -6) +
+    labs(title = "Morts du terrorisme 2012-2016", 
+         subtitle = stats.label$label)
+   print(p)
+}
+plotSingleTime(dm, labels, ym)
+
+saveGIF({
+  for(ym in unique(dm$yearMonth)) {
+    plotSingleTime(dm, labels, ym)
+  }
+},  movie.name = paste0("terrorismDeathMap_", 'FR', ".gif"), interval = 0.8, 
+  ani.width = 640*1.9, ani.height = 640, loop = TRUE)
+
 
 
 ggplot() + 
   swi_dark_map() + 
   coord_map(xlim = xlim, ylim = ylim, projection = "gilbert") + 
-  geom_jitter(data = dm, aes(x = lon, y= lat, size = z, colour = z), 
-              alpha=0.25, stroke = 0) +
+  geom_jitter(data = dm, aes(x = lon, y= lat, size = z), 
+              alpha=0.2, stroke = 0, colour = "#d09995") +
    geom_map(
   data=world, map=world,
   aes(x=long, y=lat, map_id=region, group = 1),
@@ -102,8 +177,8 @@ ggplot() +
   scale_size_continuous(
     trans = "log1p", range = c(10^-6, 8), breaks = c(10, 100, 1000), 
     guide = guide_legend(override.aes = list(colour = "#f7eeed"))) +
-  scale_colour_continuous(
-    low = "#6a332f", high = "#f7eeed", trans = "log1p", guide = F) + 
+  # scale_colour_continuous(
+  #   low = "#6a332f", high = "#f7eeed", trans = "log1p", guide = F) + 
   theme(
     legend.key.size = unit(1, "lines"),
     legend.position = c(0.85,0.12),
@@ -114,51 +189,29 @@ ggplot() +
 
 
 
-# ggplot() + 
-#   geom_map(
-#   data=world, map=world,
-#   aes(x=long, y=lat, map_id=region, group = 1),
-#   color="#262626", fill= "#333333", size = 0.5, alpha=1) + 
-#   swi_dark_map() + 
-#   coord_map(xlim = xlim, ylim = ylim, projection = "gilbert") + 
-#   geom_jitter(data = dm, aes(x = lon, y= lat, size = z, colour = z), 
-#               alpha=0.25, stroke = 0) +
-#   scale_size_continuous(
-#     trans = "log1p", range = c(10^-6, 8), breaks = c(1, 10, 100, 1000), 
-#     guide = guide_legend(override.aes = list(colour = "#f7eeed"))) +
-#   scale_colour_continuous(
-#     low = "#6a332f", high = "#f7eeed", trans = "log1p", guide = F) + 
-#   theme(
-#     legend.key.size = unit(1, "lines"),
-#     legend.position = c(0.1,1)
-# 
-#     ) + 
-#   geom_text_repel(data=labels, aes(x = lon, y = lat, label = country_txt), colour = "white", segment.alpha = 0.3,  alpha = 0.5, nudge_x = -7, nudge_y = -5)
-
 
 
 p <- ggplot() + 
   swi_dark_map() + 
   coord_map(xlim = xlim, ylim = ylim, projection = "gilbert") + 
-  geom_jitter(data = dm, aes(x = lon, y= lat, size = z, colour = z, frame = yearMonth, cumulative = T), 
-              alpha=0.15, stroke = 0) +
+  geom_jitter(data = dm %>% head (24), aes(x = lon, y= lat, size = z, frame = yearMonth, cumulative = T), 
+              alpha=0.1, stroke = 0, colour = "#d09995") +
   geom_map(
     data=world, map=world,
     aes(x=long, y=lat, map_id=region, group = 1),
     color="#4d4d4d", fill= "#24a8a8", size = 0.15, alpha=0.15
   ) + 
   scale_size_continuous(
-    trans = "log1p", range = c(10^-6, 8), breaks = c(10, 100, 1000), 
-    guide = guide_legend(override.aes = list(colour = "#f7eeed"))) +
-  scale_colour_continuous(
-    low = "#6a332f", high = "#f7eeed", trans = "log1p", guide = F) + 
+    trans = "log1p", range = c(10^-6, 7), breaks = c(10, 100, 1000), 
+    guide = guide_legend(override.aes = list(fill = "#d09995"))) +
   theme(
     legend.key.size = unit(1, "lines"),
     legend.position = c(0.85,0.12),
     legend.box.background = element_rect(size = 0, fill = "black"),
     plot.title = element_text(margin = margin(t = 10, b = -22, l = 5))
     ) + 
-  geom_text_repel(data=labels, aes(x = lon, y = lat, label = country_txt), colour = "white", segment.alpha = 0.3,  alpha = 0.5, nudge_x = -7, nudge_y = -5)
+  geom_text_repel(data=labels, aes(x = lon, y = lat, label = country_txt), colour = "white", segment.alpha = 0.3,  alpha = 0.5, nudge_x = -7, nudge_y = -5) +
+  geom_text(data = deathsByMonth %>% head (24), aes(x = x, y = y, label = label, group = yearMonth), colour = "white")
 
 
 # p <- ggplot() + geom_map(
@@ -172,7 +225,7 @@ p <- ggplot() +
 #   scale_colour_continuous(low = "#6a332f", high = "#f7eeed", trans = "log1p", 
 #                           guide = F)
 
-gganimate(p, "deaths_terrorism_map.gif", ani.width = 660 * 1.8 , ani.height = 660 * 1, interval = 0.3)
+gganimate(p, "deaths_terrorism_map.gif", ani.width = 660 * 1.9 , ani.height = 660 * 1, interval = 0.3)
 
 ```
 

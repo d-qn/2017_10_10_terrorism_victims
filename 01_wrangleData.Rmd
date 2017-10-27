@@ -14,9 +14,11 @@ output:
 2. small multiples by region, largely a decrease in 2016 for middle east
 3. Map world animated
 
+
+* [Spiegel](http://www.spiegel.de/politik/ausland/11-september-so-verlagert-sich-der-terrorismus-a-1111470.html)
 * [RTS](http://www.rts.ch/info/monde/9016433-le-terrorisme-tue-vingt-fois-plus-en-afrique-qu-en-europe.html)
 * [538 europe terrorism](https://fivethirtyeight.com/features/the-rise-of-religiously-inspired-terrorism-in-france/)
-
+# [Washpost](https://www.informationisbeautifulawards.com/showcase/1764?utm_content=buffer8227f&utm_medium=social&utm_source=twitter.com&utm_campaign=buffer)
 * Mainly similar to this [538 story](https://fivethirtyeight.com/features/global-terrorism-declined-last-year-but-not-in-the-west/) 
   * Focus europe vs rest of the world
     * number of attacks, deaths, hostage, weapons,
@@ -207,9 +209,3 @@ if(print_stats_summary) {
 }
 ```
 
-
-```{r map}
-library(highcharter)
-
-
-```
