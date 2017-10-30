@@ -17,6 +17,7 @@ output:
 ```{r setup, include=FALSE}
 data.file <- "input/GTD_0617dist.csv"
 
+dev <- T
 cleanOutput <- F
 
 library(tidyverse)
@@ -68,8 +69,7 @@ dm <- data %>% filter(iyear >= 2012, nkill > 0, !is.na(longitude)) %>%
 
 dm %<>% mutate(
   date = str_c(iyear, imonth, iday, sep = "-") %>% as.Date(),
-  yearMonth = format(date, "%Y-%m"),
-  
+  yearMonth = format(date, "%Y-%m")
 ) %>% as.data.frame()
 rownames(dm) <- 1:nrow(dm)
 
@@ -80,12 +80,12 @@ deathsByMonth <- dm %>% group_by(yearMonth) %>%
   ungroup() %>%
   mutate(
     tot = cumsum(monthtot),
-    label = paste0("Morts: ", monthtot, " (depuis 2012: ", tot, ")")
+    label = paste0(monthtot, " morts (depuis 2012: ", tot, ")")
   )
 
-xlim <- quantile(dm$lon, probs = c(0, .99), na.rm = T) + c(0, 5)
+xlim <- quantile(dm$lon, probs = c(0, .99), na.rm = T) + c(-5, 5)
 #xlim <- c(-124, 153)
-ylim <- quantile(dm$lat, probs = c(0, 1), na.rm = T)
+ylim <- quantile(dm$lat, probs = c(0, 1), na.rm = T) + c(-1, 1)
 
 
 top_countries <- dm %>% group_by(country_txt) %>%
@@ -114,54 +114,59 @@ plotSingleTime <- function(dm, labels, ym, txt) {
   stats.label <- deathsByMonth %>% filter(yearMonth == ym)
   
   p <- ggplot() + 
-    swi_dark_map(base_size = 20) + 
+    swi_dark_map(base_size = 17) + 
     geom_map(
       data=world, map=world,
       aes(x=long, y=lat, map_id=region),
-      color="#333333", fill= "#262626", size=0.4, alpha=0.9) +
+      color="#333333", fill= "#262626", size=0.35, alpha=0.75) +
     coord_map(xlim = xlim, ylim = ylim, projection = "gilbert") + 
-    geom_jitter(data = bg, aes(x = lon, y= lat, size = z, alpha = as.numeric(date)), 
+    geom_jitter(data = bg, aes(x = lon, y= lat, size = z, 
+                               alpha = date - min(dm$date)), 
                 stroke = 0, colour = "#6a332f") +
     geom_jitter(data = dd, aes(x = lon, y= lat, size = z), 
-                alpha=0.5, stroke = 0, colour = "#d09995") +
-    annotate(
-      geom = "text", x = 0, y = 40, label = ym, colour = "lightgrey",
-      alpha = 0.1, size = 50, hjust = 0.5, vjust = 0.5
-    ) +
-    # geom_map(
-    #   data=world, map=world,
-    #   aes(x=long, y=lat, map_id=region, group = 1),
-    #   color="#4d4d4d", fill= "#24a8a8", size = 0.2, alpha=0.1
-    # ) + 
+                alpha=0.65, stroke = 0, colour = "#d09995") +
+    # annotate(
+    #   geom = "text", x = mean(xlim), y = 50, label = ym, colour = "#f7eeed",
+    #   alpha = 0.8, size = 30, hjust = 0.5, vjust = 1
+    # ) +
     scale_size_continuous(
       trans = "log1p", range = c(10^-6, 7), 
       breaks = c(10, 100, 1000), limits = range(dm$z), 
       guide = guide_legend(override.aes = list(fill = "#d09995"))) +
-    scale_alpha_continuous(range = c(0.05, 0.35), guide = F) +
+    scale_alpha_continuous(range = c(0.01, 0.2), guide = F) +
     theme(
       legend.key.size = unit(1, "lines"),
-      legend.position = c(0.85,0.12),
-      legend.box.background = element_rect(size = 0, fill = "black"),
-      plot.title = element_text(margin = margin(t = 7, b = -10, l = -10)),
-      plot.subtitle = element_text(margin = margin(t = 20, b = -60, l = -10)),
+      legend.position = c(0.03,0.15),
+      plot.title = element_text(hjust = 0.5, colour = "#f7eeed"),
+      plot.subtitle = element_text(hjust = 0.5, margin = margin(b = -20), size = 27),
+      #legend.box.background = element_rect(size = .1, fill = '#262626'),
+     # plot.title = element_text(margin = margin(t = 7, b = -10, l = 50)),
+     # plot.subtitle = element_text(margin = margin(t = 20, b = -60, l = 50)),
       plot.margin = unit(c(0.5, 0.2, 0, 0), "cm")
     ) + 
     geom_text_repel(
       data = labels, aes(x = lon, y = lat, label = country_txt), 
       colour = "white", segment.alpha = 0.3,
-      alpha = 0.5, nudge_x = -8, nudge_y = -6) +
+      alpha = 0.9, nudge_x = -8, nudge_y = -7) +
     labs(title = "Morts du terrorisme 2012-2016", 
-         subtitle = stats.label$label)
+         subtitle = paste0(ym, " - ", stats.label$label))
    print(p)
 }
-plotSingleTime(dm, labels, ym)
+#plotSingleTime(dm, labels, ym)
 
+
+
+if(dev) {
+  yearMonths <- unique(dm$yearMonth) %>% tail(10)  
+} else {
+  yearMonths <- unique(dm$yearMonth)
+}
 saveGIF({
-  for(ym in unique(dm$yearMonth)) {
+  for(ym in yearMonths) {
     plotSingleTime(dm, labels, ym)
   }
-},  movie.name = paste0("terrorismDeathMap_", 'FR', ".gif"), interval = 0.8, 
-  ani.width = 640*1.9, ani.height = 640, loop = TRUE)
+},  movie.name = paste0("terrorismDeathMap_", 'FR', ifelse(dev == T, "_dev", ""), ".gif"), 
+  interval = 1, ani.width = 660 * 2, ani.height = 660 * 1.1, loop = TRUE)
 
 
 
