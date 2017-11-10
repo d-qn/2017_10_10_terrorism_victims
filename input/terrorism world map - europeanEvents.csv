@@ -1,0 +1,7 @@
+id,iyear,imonth,iday,lat,lon,country,label
+a,2015,1,7,48.859172,2.370553,France,Paris (Charlie Hebdo)
+b,2015,11,13,48.86513833,2.371018667,France,Paris (Bataclan & 10th Arrondissement)
+c,2016,3,22,50.8708235,4.4275245,Belgium,Bruxelles
+d,2016,7,14,43.693611,7.255833,France,Nice (Bastille day)
+e,2016,7,22,48.183329,11.531643,Germany,Munich
+f,2016,12,19,52.504886,13.335511,Germany,Berlin

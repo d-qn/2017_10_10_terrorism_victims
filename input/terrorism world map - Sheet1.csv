@@ -1,0 +1,28 @@
+code,EN,FR,DE,IT,PT,AR,RU,ES,JA,ZH
+title,,La géographie du terrorisme de 2012 à 2016,,,,,,,,
+descr1,,morts,,,,,,,,
+descr1b,,attaques,,,,,,,,
+descr2,,depuis 2012:,,,,,,,,
+1,Jan,janv.,,,,,,,,
+2,Feb,févr.,,,,,,,,
+3,Mar,mars,,,,,,,,
+4,Apr,avr.,,,,,,,,
+5,May,mai,,,,,,,,
+6,Jun,juin,,,,,,,,
+7,Jul,juill.,,,,,,,,
+8,Aug,août,,,,,,,,
+9,Sep,sept.,,,,,,,,
+10,Oct,oct.,,,,,,,,
+11,Nov,nov.,,,,,,,,
+12,Dec,déc.,,,,,,,,
+a,Paris (Charlie Hebdo),Paris (Charlie Hebdo),,,,,,,,
+b,Paris (Bataclan & 10th Arrondissement),Paris (Bataclan & 10ème arrondissement),,,,,,,,
+c,Bruxelles,Bruxelles,,,,,,,,
+d,Nice (Bastille day),Nice (14 juillet),,,,,,,,
+e,Munich,Munich,,,,,,,,
+f,Berlin,Berlin,,,,,,,,
+source,Source,source,Quelle,Fonte,fonte,المصدر,Источник,Fuente,出典,来源
+source.name,Global Terrorism Database,Global Terrorism Database,,,,,,,,
+code,Code,code,Code,Codice,código,الرمز,Код,código,コード,代码
+base.font,OpenSans-CondensedLight,OpenSans-CondensedLight,OpenSans-CondensedLight,OpenSans-CondensedLight,OpenSans-CondensedLight,OpenSans-CondensedLight,OpenSans-CondensedLight,OpenSans-CondensedLight,PingFang SC Semibold,PingFang SC Semibold
+title.font,OpenSans-CondensedBold,OpenSans-CondensedBold,OpenSans-CondensedBold,OpenSans-CondensedBold,OpenSans-CondensedBold,OpenSans-CondensedBold,OpenSans-CondensedBold,OpenSans-CondensedBold,Hiragino Sans W1,PingFang SC Light

@@ -14,7 +14,7 @@ output:
 2. small multiples by region, largely a decrease in 2016 for middle east
 3. Map world animated
 
-
+* [Washington post](https://www.washingtonpost.com/graphics/world/the-scale-of-terrorist-attacks-around-the-world/)
 * [Spiegel](http://www.spiegel.de/politik/ausland/11-september-so-verlagert-sich-der-terrorismus-a-1111470.html)
 * [RTS](http://www.rts.ch/info/monde/9016433-le-terrorisme-tue-vingt-fois-plus-en-afrique-qu-en-europe.html)
 * [538 europe terrorism](https://fivethirtyeight.com/features/the-rise-of-religiously-inspired-terrorism-in-france/)
@@ -26,7 +26,10 @@ output:
 * Total deaths by region    
     
 *     
-  
+
+## DONE
+
+* [Le terrorisme a diminué en 2016](https://datawrapper.dwcdn.net/7kWBw/1/)
   
 
 ## Txt
@@ -121,7 +124,7 @@ if(print_stats_summary) {
   data %>% filter(natlty1_txt == "Switzerland") %>% nrow()
   
   data %>% filter(natlty1_txt == "Switzerland") %>% arrange(desc(nkill)) %>% 
-    select(columns_min, -natlty2_txt, -natlty3_txt  ) %>% head(10) %>% kable() # %>% View()
+    select(columns_min, -natlty2_txt, -natlty3_txt  ) %>% head(10)  %>% View()
   
   data %>% filter(iyear == 1997 & imonth == 11 & country_txt == "Egypt") %>% 
     select(columns_min) %>% kable()
@@ -136,10 +139,10 @@ dd1 <- dd %>% group_by(iyear, region) %>%
 
 ## total deaths and attacks
 dd2 <- data %>% group_by(iyear) %>%
-   summarise(death = sum(nkill, na.rm = T), attacks = length(nkill), sum(nwound, na.rm = T)) %>%
+   summarise(death = sum(nkill, na.rm = T), attacks = length(nkill), wounds = sum(nwound, na.rm = T)) %>%
   ungroup() %>% gather(key = "type", value = "value", -iyear)
 
-ggplot(dd2) + geom_line(aes(x = iyear, y = value, group = type)) + 
+ggplot(dd2) + geom_line(aes(x = iyear, y = value, group = type, colour = type)) + 
   swi_theme()
 
 ggplot(dd2 %>% filter(iyear >= 2012)) + geom_line(aes(x = iyear, y = value, group = type)) + 
@@ -209,3 +212,125 @@ if(print_stats_summary) {
 }
 ```
 
+```{r dw export, eval = F}
+dd2 %>% spread(type, value) %>% 
+  write_csv(path = "input/yearly_terrorists_world.csv")
+
+```
+
+```{r top countries}
+library(highcharter)
+library(swiRcharts)
+library(htmltools)
+
+tot <- data %>% filter(nkill >= 1, iyear >= 2012, iyear < 2017) %>%
+  group_by(country_txt) %>%
+  summarise(totDeath = sum(nkill)) %>%
+  ungroup() %>% arrange(desc(totDeath))
+
+top5 <- tot %>% slice(1:5) %>% .$country_txt
+
+tot %>% mutate(tot = sum(totDeath), share = totDeath / tot)
+
+
+#top_5_10 <- tot %>% slice(6:7) %>% .$country_txt
+
+dd <- data %>% filter(nkill >= 1, iyear >= 2012, iyear < 2017) %>%
+  mutate(
+    group = ifelse(country_txt %in% top5, country_txt, "Rest of the world")#,
+  #  group2 = ifelse(country_txt %in% c(top5, top_5_10), country_txt, "rest")
+    ) %>%
+  group_by(group, iyear) %>%
+  summarise(death = sum(nkill)) %>%
+  ungroup()
+
+ggplot(data = dd) + geom_area(aes(iyear, death, group = group, fill = group)) +
+  facet_wrap(~group) 
+
+
+
+iso <- "Iraq"
+
+
+lang <- 'EN'
+chart.height <- 220
+bg.colour <-  "#f2f2f2" 
+y.max <- max(dd$death)
+# cols <- structure( swi_col[-(4:5)],
+#                     names  = c("Iraq", "Afghanistan", "Nigeria", "Syria", "Pakistan", "Rest of the world"))
+
+cols <- structure(c(rep("#193442", 5), '#72302f'),
+                    names  = c("Iraq", "Afghanistan", "Nigeria", "Syria", "Pakistan", "Rest of the world"))
+
+
+plotArea <- function(dd, iso) {
+  ddd <- dd %>% filter(group == iso) 
+  
+  # Get translation
+  #label <- countryTranslation(as.character(ddd[1,'iso2c']), lang)[1,2] %>% unname()
+  color <- cols[match(as.character(unique(ddd$group)), names(cols))] %>% unname()
+  
+  hc <- hchart(
+    ddd, "area", hcaes(x = iyear, y = death)
+  ) %>% 
+    hc_add_theme(hc_theme_swi) %>%
+    hc_chart(
+      backgroundColor = bg.colour, height = chart.height, 
+      spacing = list(-5, 8, 7, 7), borderRadius = 4,
+      borderColor = "white", borderWidth = 1
+    ) %>% 
+    hc_legend(enabled = F) %>%
+    hc_xAxis(
+      useHTML =T, lineColor = color, tickLength = 7, allowDecimals = F, maxPadding = 0, minPadding = 0,
+      labels = list(autoRotation = list(0), 
+                    padding = 1, style = list(fontSize = "1em", textOverflow = 'none')), 
+      gridLineWidth = 0,  title = "", reversed = ifelse(lang == "AR", T, F)
+    ) %>%
+    hc_yAxis(
+      useHTML = T, labels = list(format = '{value}', style = list(fontSize = "0.8em")),
+      gridLineWidth = 1, ceiling = y.max, #tickInterval = 20, #gridLineColor = "#808080",
+      minPadding = 0, maxPadding = 0, max = y.max,
+      title = "", opposite = ifelse(lang == "AR", T, F)
+    ) %>% 
+    hc_plotOptions(
+      area = list(
+        marker = list(enabled = FALSE, fillColor = color, lineColor = color, radius = 0, 
+                      states = list(hover = list(radius = 0))), 
+        color = color, fillColor = color, lineColor = color, showInLegend = F, lineWidth = 1)
+    ) %>%
+    hc_tooltip(enabled = F) %>%
+    hc_title(
+          text = iso, style = list("fontSize" = "0.8em", "color" = '#1c3a4a'),
+          floating = T, align = ifelse(lang == "AR", "right", "left"), 
+          useHTML = T, y = 30, x = ifelse(lang == "AR", -30, 30)
+    )
+}
+
+
+plots <- lapply(names(cols), function(iso) plotArea(dd, iso))
+
+source <- paste0(
+  # txt['source', lang], ": ", htmlLink( "http://nccr-onthemove.ch/home/", txt['source.name', lang] ), " | ",
+  # txt['code', lang], ": ", htmlLink("https://github.com/jbkunst/highcharter", txt['code.name', lang]),
+  " | swissinfo.ch"
+)
+
+save_html(
+  tags$html(
+    tags$head(includeHTML(style_swi_highcharter())),
+    #tags$h2(HTML(txt["main.title", lang])),
+    tags$h2(HTML("Since 2012, more than 70% of the terrorim deaths happened in 5 countries")),
+    div(class = "descr", HTML("Yearly deaths from terrorism from 2012 until 2016")),
+    #div(class = "descr", HTML(paste0('<img src="https://interactive.swissinfo.ch/assets/Interactive_icon.svg.png" width="12" align="top">&nbsp; ', txt["descr1", lang], "<br>",  txt["descr2", lang]))),
+    #tags$h3(HTML(txt['h3', lang])),
+    div(class = "graphic", hw_grid(plots, ncol = 2, rowheight = chart.height)),
+    # div(id = "cite", HTML(source)),
+    HTML(iframeresizer)  
+  ),
+  file =  paste0("area_terrorismDeath_", lang, ".html"), libdir = "js")  
+    
+    
+
+## Since 2012, more than 70% of the terrorim deaths happened in 5 countries.  
+
+```

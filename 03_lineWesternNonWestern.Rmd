@@ -1,0 +1,153 @@
+---
+title: ""
+author: "Duc-Quang Nguyen | swissinfo.ch"
+date: " 2016"
+output: 
+  html_document:
+    toc: true
+    toc_depth: 3
+    theme: simplex
+---
+
+```{r setup, include=FALSE}
+data.file <- "input/GTD_0617dist.csv"
+
+dev <- F
+cleanOutput <- F
+library(swiRcharts)
+
+library(tidyverse)
+library(magrittr)
+library(stringr)
+library(knitr)
+library(countrycode)
+library(swiMap)
+library(swiTheme)
+
+### Interactive 
+library(ggiraph)
+library(htmltools)
+
+
+### Misc stuff
+require(viridis)
+```
+
+```{r load, echo=F}
+data <- read_csv(data.file) 
+
+# get the list of coutries
+countries <- data %>% select(country, country_txt) %>% 
+  distinct() %>% arrange(country) 
+
+regions <- data %>% select(region, region_txt) %>% 
+  distinct() %>% arrange(region) 
+
+data %<>% select(-region_txt)
+```
+
+
+```{r helper}
+## FROM https://groups.google.com/forum/#!topic/ggplot2/qrcvqy6TdzI
+library(scales)
+c_trans <- function(a, b, breaks = b$breaks, format = b$format) {
+  a <- as.trans(a)
+  b <- as.trans(b)
+
+  name <- paste(a$name, b$name, sep = "-")
+
+  trans <- function(x) a$trans(b$trans(x))
+  inv <- function(x) b$inverse(a$inverse(x))
+
+  trans_new(name, trans, inv, breaks, format)
+}
+
+rev_date <- c_trans("reverse", "date")
+
+#https://stackoverflow.com/questions/39071002/moving-x-or-y-axis-together-with-tick-labels-to-the-middle-of-a-single-ggplot-n
+shift_axis <- function(p, y=0){
+  g <- ggplotGrob(p)
+  dummy <- data.frame(y=y)
+  ax <- g[["grobs"]][g$layout$name == "axis-b"][[1]]
+  p + annotation_custom(grid::grobTree(ax, vp = grid::viewport(y=1, height=sum(ax$height))), 
+                        ymax=y, ymin=y) +
+    geom_hline(aes(yintercept=y), data = dummy)# +
+    # theme(axis.text.y  = element_blank(), 
+    #       axis.ticks.y = element_blank())
+
+}
+
+p <- qplot(1:10, 1:10) + theme_bw() 
+shift_axis(p, 5)
+```
+
+
+```{r line}
+ee <- data %>% filter(iyear >= 2012, iyear < 2017, nkill > 0) 
+
+ee %>% mutate(reg = region %in% c(8)) %>%
+  group_by(reg) %>%
+  summarise(tot = sum(nkill)) %>%
+  ungroup()
+
+
+data %>% filter(iyear >= 2016) %>% .$nkill %>% quantile(probs = 0.9, na.rm = T)
+nkill_threshold <- 3
+
+dm <- data %>% filter(iyear >= 2016, nkill >= nkill_threshold) %>%
+  mutate(
+    date = str_c(iyear, imonth, iday, sep = "-") %>% as.Date(),
+    reg = ifelse(region %in% c(1,8), "Western", "Rest")
+  ) %>%
+ select(iyear, date, country, country_txt, region, reg, location, summary, nkill, 
+        targtype1_txt, weaptype1_txt) %>%
+  mutate(kill = ifelse(reg == "Western", -1, 1) * nkill)
+  
+dm_fg <- dm %>% filter(reg == "Western" | (reg != "Western" & kill >= 200))
+dm_bg <- dm %>% filter(reg != "Western" & kill < 200)
+stopifnot((nrow(dm_fg) + nrow(dm_bg)) == nrow(dm))
+
+
+gp <- ggplot(data = dm_bg, aes(x = date, y = kill, fill = reg)) + 
+  geom_bar(stat = "identity", width = 1, alpha = 0.6) +
+  coord_flip() + 
+  #scale_y_reverse()+
+  scale_x_continuous(trans = rev_date, name = "", expand = c(0,0)) +
+  scale_y_continuous(position = "top") +
+  swi_theme(y_gridlines = F)
+
+gp2 <- shift_axis(gp, 0)
+gp2 <- gp2 + geom_bar(data = dm_fg, stat = "identity", width = 1) +
+  scale_fill_manual(values = swi_col[c(8,1)])
+print(gp2)  +
+  theme(
+   # axis.text.y = element_text(margin = margin( t = 500, l = 100, r = -70))
+    axis.text.y = element_text(hjust = 5, vjust = 1.1),
+    axis.ticks.y = element_blank()
+    )
+
+
+```
+
+
+
+```{r move production graphics}
+if(cleanOutput) {
+  files <- c("basename_.*html", "js")
+
+  if(!dir.exists("output/bak")) {
+    dir.create("output/bak")
+  } else {
+    list.files("output/bak/", full.names = T, recursive = T) %>% file.remove()
+  }
+  ori.files <- list.files("output", full.names = T)[list.files("output") != "bak"]
+  file.copy(ori.files, to = "output/bak/", recursive = T)
+  unlink(ori.files, recursive = T)
+
+  files_tomove <- lapply(files, function(x) list.files(pattern = x)) %>% unlist()
+  file.copy(files_tomove, "output", recursive = T)
+  unlink(files_tomove, recursive = T)
+}
+
+
+```
