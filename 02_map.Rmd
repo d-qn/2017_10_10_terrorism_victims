@@ -17,7 +17,7 @@ output:
 ```{r setup, include=FALSE}
 data.file <- "input/GTD_0617dist.csv"
 euro_events.file <- "input/terrorism world map - europeanEvents.csv"
-translation.file <- "input/terrorism world map - Sheet1.csv"
+translation.file <- "input/terrorism world map and area chart - Sheet1.csv"
 
 dev <- F
 cleanOutput <- F

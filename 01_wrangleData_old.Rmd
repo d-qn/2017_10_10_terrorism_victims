@@ -66,7 +66,6 @@ load_raw_data <- F
 print_stats_summary <- F
 prod_graphic_only <- T
 
-translation.file <- "input/terrorism world map and area chart - Sheet1.csv"
 raw_data.file <- "data/globalterrorismdb_0617dist.xlsx"
 data.file <- "input/GTD_0617dist.csv"
 
@@ -117,7 +116,6 @@ regions <- data %>% select(region, region_txt) %>%
   distinct() %>% arrange(region) 
 
 data %<>% select(-region_txt)
-txt <- loadTranslation(translation.file)
 ```
 
 
@@ -228,8 +226,6 @@ if(!prod_graphic_only) {
 library(highcharter)
 library(swiRcharts)
 library(htmltools)
-library(RColorBrewer)
-library(scales)
 
 tot <- data %>% filter(nkill >= 1, iyear >= 2012, iyear < 2017) %>%
   group_by(country_txt) %>%
@@ -240,74 +236,44 @@ top5 <- tot %>% slice(1:5) %>% .$country_txt
 
 tot %>% mutate(tot = sum(totDeath), share = totDeath / tot)
 
-reg2agg <- c("North America", "Central Asia", "Central America & Caribbean", "Australasia & Oceania", "East Asia")
+
+#top_5_10 <- tot %>% slice(6:7) %>% .$country_txt
+
 dd <- data %>% filter(nkill >= 1, iyear >= 2012, iyear < 2017) %>%
   mutate(
-    group = ifelse(country_txt %in% top5, country_txt, "Restoftheworld"),
-    group2 = ifelse(country_txt %in% c(top5), country_txt, region)
+    group = ifelse(country_txt %in% top5, country_txt, "Rest of the world")#,
+  #  group2 = ifelse(country_txt %in% c(top5, top_5_10), country_txt, "rest")
     ) %>%
-# get and merge to some geographical regions for group2
-mutate(
-  group2 = ifelse(group2 %in% top5, group2, regions[match(group2, regions$region), 'region_txt'] %>% unlist(use.names = F))
-) %>% 
-mutate(
-  group2 = ifelse(group2 %in% reg2agg, "Restoftheworld", group2)
-) %>%
-  group_by(group, group2, iyear) %>%
+  group_by(group, iyear) %>%
   summarise(death = sum(nkill)) %>%
-  ungroup() %>%
-  arrange(iyear)
+  ungroup()
 
-# reorder factors
-dd %<>% mutate(
-  group2 = forcats::fct_reorder(factor(group2), death, fun = sum, desc = T),
-  iso = countrycode(group2, "country.name", "iso2c")
-) %>%
-  mutate(
-    iso = ifelse(is.na(iso), gsub(" ", "", group2), iso)
-  )
+ggplot(data = dd) + geom_area(aes(iyear, death, group = group, fill = group)) +
+  facet_wrap(~group) 
 
 
-## chart settings
 
-lang <- 'FR'
+iso <- "Iraq"
+
+
+lang <- 'EN'
 chart.height <- 220
 bg.colour <-  "#f2f2f2" 
 y.max <- max(dd$death)
-orderGroup <- c("Iraq", "Afghanistan", "Nigeria", "Syria", "Pakistan", "Restoftheworld")
-stopifnot(dd$group %in% orderGroup)
 
+cols <- structure(c(rep("#193442", 5), '#72302f'),
+                    names  = c("Iraq", "Afghanistan", "Nigeria", "Syria", "Pakistan", "Rest of the world"))
 
-# define colors
-colors <- levels(dd$group2)
-tmp <- ifelse(colors %in% top5, '#b30018', NA)
-#tmp[is.na(tmp)] <- brewer_pal(palette = "Greys", direction = -1)(9)[-9]
-tmp[is.na(tmp)] <- colorRampPalette(colors = brewer_pal(palette = "Reds", direction = -1)(9)[-c(8,9)])(8)
-colors <- structure(colors, names = tmp)
 
 plotArea <- function(dd, iso) {
-
-  ddd <- dd[which(dd$group == iso),]
+  ddd <- dd %>% filter(group == iso) 
   
   # Get translation
-  if(length(unique(ddd$group2)) == 1) {
-    ddd %<>% mutate(label = countryTranslation(iso, lang)[,-1])
-    groupLabel <- unique(ddd$label)
-  } else {
-    ddd %<>% mutate(label = txt[iso, lang]) 
-    ddd %<>%
-      mutate(label = factor(label, levels = ddd[na.omit(match(levels(ddd$group2), ddd$group2)), "label"] %>% unlist(use.names = F)))
-    groupLabel <-  txt[iso, lang]
-  }
-  
-  # Get translation
-
-  color <- names(colors)[match(factor(ddd$group2) %>% levels(), colors)] %>% rev()
+  #label <- countryTranslation(as.character(ddd[1,'iso2c']), lang)[1,2] %>% unname()
+  color <- cols[match(as.character(unique(ddd$group)), names(cols))] %>% unname()
   
   hc <- hchart(
-    ddd, "areaspline", hcaes(x = iyear, y = death, group = label),
-    stacking = T, marker = list(enabled = F, 
-    states = list(hover = list(enabled = F))), lineWidth = 0.1, fillOpacity = 1
+    ddd, "area", hcaes(x = iyear, y = death)
   ) %>% 
     hc_add_theme(hc_theme_swi) %>%
     hc_chart(
@@ -317,45 +283,53 @@ plotArea <- function(dd, iso) {
     ) %>% 
     hc_legend(enabled = F) %>%
     hc_xAxis(
-      useHTML =T, lineColor = '#404040', tickLength = 7, allowDecimals = F, maxPadding = 0, minPadding = 0,
-      labels = list(autoRotation = list(0),
+      useHTML =T, lineColor = color, tickLength = 7, allowDecimals = F, maxPadding = 0, minPadding = 0,
+      labels = list(autoRotation = list(0), 
                     padding = 1, style = list(fontSize = "1em", textOverflow = 'none')), 
       gridLineWidth = 0,  title = "", reversed = ifelse(lang == "AR", T, F)
     ) %>%
     hc_yAxis(
-      useHTML = T, labels = list(format = '{value}', style = list(fontSize = "0.8em"),  x = -3),
+      useHTML = T, labels = list(format = '{value}', style = list(fontSize = "0.8em")),
       gridLineWidth = 1, ceiling = y.max, #tickInterval = 20, #gridLineColor = "#808080",
       minPadding = 0, maxPadding = 0, max = y.max,
       title = "", opposite = ifelse(lang == "AR", T, F)
     ) %>% 
-    hc_colors(colors = color) %>%
+    hc_plotOptions(
+      area = list(
+        marker = list(enabled = FALSE, fillColor = color, lineColor = color, radius = 0, 
+                      states = list(hover = list(radius = 0))), 
+        color = color, fillColor = color, lineColor = color, showInLegend = F, lineWidth = 1)
+    ) %>%
+    hc_tooltip(enabled = F) %>%
     hc_title(
-          text = groupLabel, style = list("fontSize" = "1em", "color" = '#0e1d25'),
+          text = iso, style = list("fontSize" = "0.8em", "color" = '#1c3a4a'),
           floating = T, align = ifelse(lang == "AR", "right", "left"), 
           useHTML = T, y = 30, x = ifelse(lang == "AR", -30, 30)
-    ) %>%
-    hc_tooltip(table = T, crosshairs = TRUE)
+    )
 }
 
 
-plots <- lapply(orderGroup, function(iso) plotArea(dd, iso))
+plots <- lapply(names(cols), function(iso) plotArea(dd, iso))
 
 source <- paste0(
-  txt['source', lang], ": ", htmlLink( "https://www.start.umd.edu/gtd/", txt['source.name', lang] ),
+  # txt['source', lang], ": ", htmlLink( "http://nccr-onthemove.ch/home/", txt['source.name', lang] ), " | ",
+  # txt['code', lang], ": ", htmlLink("https://github.com/jbkunst/highcharter", txt['code.name', lang]),
   " | swissinfo.ch"
 )
 
 save_html(
   tags$html(
     tags$head(includeHTML(style_swi_highcharter())),
-    tags$h2(HTML(txt["title2", lang])),
-    div(class = "descr", HTML(paste0('<img src="https://interactive.swissinfo.ch/assets/Interactive_icon.svg.png" width="12" align="top">&nbsp; ', txt["description", lang]))),
-    tags$h3(HTML(txt['h3', lang])),
+    #tags$h2(HTML(txt["main.title", lang])),
+    tags$h2(HTML("Since 2012, more than 70% of the terrorim deaths happened in 5 countries")),
+    div(class = "descr", HTML("Yearly deaths from terrorism from 2012 until 2016")),
+    #div(class = "descr", HTML(paste0('<img src="https://interactive.swissinfo.ch/assets/Interactive_icon.svg.png" width="12" align="top">&nbsp; ', txt["descr1", lang], "<br>",  txt["descr2", lang]))),
+    #tags$h3(HTML(txt['h3', lang])),
     div(class = "graphic", hw_grid(plots, ncol = 2, rowheight = chart.height)),
-    div(id = "cite", HTML(source)),
+    # div(id = "cite", HTML(source)),
     HTML(iframeresizer)  
   ),
-  file =  paste0("terrorismDeath_area_", lang, ".html"), libdir = "js")  
+  file =  paste0("area_terrorismDeath_", lang, ".html"), libdir = "js")  
     
     
 
