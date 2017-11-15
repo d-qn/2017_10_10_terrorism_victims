@@ -12,14 +12,15 @@ output:
 # Hexmap in R
 
 * [ggplot2](http://unconj.ca/blog/custom-hexbin-functions-with-ggplot.html)
-* [](http://santiago.begueria.es/2016/04/mapping-with-ggplot2-hexbin-maps/)
 
 ```{r setup, include=FALSE}
 data.file <- "input/GTD_0617dist.csv"
 euro_events.file <- "input/terrorism world map - europeanEvents.csv"
 translation.file <- "input/terrorism world map and area chart - Sheet1.csv"
 
-dev <- F
+lang2exclude <- ''
+
+dev <- T
 cleanOutput <- F
 
 library(tidyverse)
@@ -46,6 +47,9 @@ require(viridis)
 ```{r load, echo=F}
 data <- read_csv(data.file) 
 txt <- loadTranslation(translation.file)
+if(length(lang2exclude) > 0) {
+  
+}
 euro <- read_csv(euro_events.file)
 
 stopifnot(euro$id %in% rownames(txt))
@@ -68,6 +72,7 @@ world <- map_data("world") %>% filter(region != "Antarctica")
 ```{r animated map}
 library(ggrepel)
 library(animation)
+library(grid)
 
 dm <- data %>% filter(iyear >= 2012, nkill > 0, !is.na(longitude)) %>% 
   select(iyear, imonth, iday, country_txt, latitude, longitude, nkill) %>%
@@ -92,10 +97,10 @@ deathsByMonth <- dm %>% group_by(yearMonth) %>%
   ungroup() %>%
   mutate(tot = cumsum(monthtot), totatt = cumsum(monthatt))
 
-xlim <- quantile(dm$lon, probs = c(0, .99), na.rm = T) + c(-5, 5)
-#xlim <- c(-124, 153)
-ylim <- quantile(dm$lat, probs = c(0, 1), na.rm = T) + c(-1, 1)
-
+#xlim <- quantile(dm$lon, probs = c(0, .99), na.rm = T) + c(-5, 5)
+xlim <- c(-129, 129)
+ylim <- c(-60, 140) #quantile(dm$lat, probs = c(0, 1), na.rm = T) + c(-1, 1)
+topMargin <- 30
 
 top_countries <- dm %>% group_by(country_txt) %>%
   summarise(tot = sum(z)) %>% ungroup() %>%
@@ -119,12 +124,22 @@ stopifnot(!all(is.na(labels$iso2)))
 ym <- "2015-01"
 lang <- 'FR'
 
+# Code to override clipping
+# https://stackoverflow.com/questions/37890638/how-to-change-font-size-in-geom-text-outside-plot-area
+clipGg <- function(gg) {
+  gt <- ggplot_gtable(ggplot_build(gg))
+  gt$layout$clip[gt$layout$name == "panel"] <- "off"
+  grid.draw(gt)
+}
+
+
 plotSingleTime <- function(dm, labels, euro, ym, txt, lang) {
   
   dd <- dm %>% filter(yearMonth == ym)
   bg <- dm %>% filter(yearMonth < ym)
   stats.label <- deathsByMonth %>% filter(yearMonth == ym)
   euro.label <- euro %>% filter(yearMonth == ym)
+  sizeLabel <- if(lang %in% c('ZH', 'JA')) 5.5 else 6.3
   
   # translation & text
   if(nrow(euro.label) > 0) {
@@ -148,78 +163,96 @@ plotSingleTime <- function(dm, labels, euro, ym, txt, lang) {
     format(stats.label$totatt, big.mark = "'"), ")"
   )
 
-  caption <- paste0( txt['source', lang], ": ", txt['source.name', lang], " | swissinfo.ch | @duc_qn")
+  caption <- paste0(txt['source', lang], ": ", txt['source.name', lang], " | swissinfo.ch | @duc_qn  ")
   
   p <- ggplot() + 
-    swi_dark_map(base_size = 18, base_family = txt['base.font', lang], 
+    swi_dark_map(base_size = 20, base_family = txt['base.font', lang], 
                  title_family = txt['title.font', lang], subtitle_family = txt['base.font', lang]) + 
     geom_map(
       data=world, map=world,
       aes(x=long, y=lat, map_id=region),
-      color="#404040", fill= "#262626", size=0.35, alpha=0.85) +
-    coord_map(xlim = xlim, ylim = ylim, projection = "gilbert") + 
+      color="#4d4d4d", fill= "#262626", size=0.35, alpha=0.85) +
+    coord_map(xlim = xlim, ylim = ylim, projection = "mollweide") + 
     geom_jitter(data = bg, aes(x = lon, y= lat, size = z, 
                                alpha = (difftime(bg$date, min(bg$date)) / (3600 * 24)) %>% as.numeric()), 
                 stroke = 0, colour = "#6a332f") +
     geom_jitter(data = dd, aes(x = lon, y= lat, size = z), 
-                alpha=0.55, stroke = 0, colour = "#d09995") +
+                alpha=0.6, stroke = 0, colour = "#d09995") +
     scale_size_continuous(
-      trans = "log1p", range = c(10^-8, 8), 
+      trans = "log1p", range = c(10^-8, 9), 
       breaks = c(10, 100, 1000), limits = range(dm$z), 
       guide = guide_legend(override.aes = list(fill = "#d09995"), title = txt['descr1', lang])) +
-    scale_alpha_continuous(range = c(0.001, 0.3), guide = F) +
+    scale_alpha_continuous(range = c(0.001, 0.25), guide = F) +
     theme(
       legend.key.size = unit(1, "lines"),
-      legend.position = c(0.03,0.1),
+      legend.position = c(0.05,0.07),
       legend.key.height = unit(1.2, "lines"),
-      plot.title = element_text(hjust = 0.5, colour = "#f2f2f2"),
-    #  plot.subtitle = element_text(hjust = 0.5, margin = margin(b = -20), size = 30),
-      plot.margin = unit(c(0.5, 0.2, 0.2, 0), "cm")
+      plot.title = element_text(hjust = 0.5, colour = "#f2f2f2",  margin=margin(b=topMargin, t = 10), 
+                                size =  38),
+      plot.subtitle = element_text(hjust = 0.5, size = 43),
+      plot.margin = unit(c(0.5, 0, 0.2, 0), "cm"),
+      plot.background = element_rect(fill = "#595959", size = 0, color = "#595959"),
+      panel.background = element_rect(fill = "#595959", size = 0, color =  "#595959"),
+      plot.caption = element_text(size = 18, hjust=1, margin=margin(t=13, b=10, r=25), color = '#f2f2f2')
     ) + 
     geom_text_repel(
       data = labels, aes(x = lon, y = lat, label = label), 
-      colour = "white", segment.alpha = 0.3, force = 2,
-      alpha = 0.9, nudge_x = -9, nudge_y = -5, family = txt['base.font', lang], size = 5) +
-    labs(title = txt['title', lang], caption = caption) +
-    annotate(geom = "text", x = mean(xlim)-40, y = round(ylim[2])-4, label = yearMonth, 
-             family = txt['base.font', lang], size = 12, colour = "white", hjust = 1, vjust = 0) +
-    annotate(geom = "text", x = mean(xlim), y = round(ylim[2])-4, label = subtitle, 
-             family = txt['title.font', lang], size = 11, colour = "#EBDDDD", hjust = 0.5, vjust = 0) +
-    annotate(geom = "text", x = 80, y = round(ylim[2])-4, label = subtitle2, 
-             family = txt['base.font', lang], size = 7, colour = "white", hjust = 1, vjust = 0, alpha = 0.5)
+      colour = "white", segment.alpha = 0.4, force = 2,
+      alpha = 0.9, nudge_x = -9, nudge_y = -6.6, family = txt['base.font', lang], size = sizeLabel) +
+    labs(title = txt['title', lang], caption = caption, subtitle = paste0(yearMonth, "  ", subtitle))
+  
+  p <- p + annotate(geom = "text", x = 0, y = 85, label = subtitle2,
+                    family = txt['base.font', lang], size = 9, 
+                    colour = "white", hjust = 0.5, vjust = 1, alpha = 0.8)
    #print(p)
   if(nrow(euro.label) > 0) {
     p2 <- p + 
       geom_text_repel(
        data = euro.label, aes(x = lon, y = lat, label = label), 
-        colour = "white", segment.alpha = 0.3, force = 2,
-        alpha = 0.9, nudge_x = 5, nudge_y = -4, family = txt['base.font', lang], size = 5)
+        colour = "white", segment.alpha = 0.5, force = 2,
+        alpha = 0.95, nudge_x = 5, nudge_y = 6, family = txt['base.font', lang], size = sizeLabel)
     print(p2)
   } else {
     print(p)
   }
 }
-plotSingleTime(dm, labels, euro, ym, txt, lang)
+
+#plotSingleTime(dm, labels, euro, ym, txt, lang)
 
 
 if(dev) {
-  yearMonths <- unique(dm$yearMonth) %>% tail(10)  
+  yearMonths <- unique(dm$yearMonth) %>% tail(3)  
+  txt <- txt[,'FR', drop = F]
 } else {
   yearMonths <- c(unique(dm$yearMonth), rep(dm$yearMonth %>% tail(1), 3))
 }
 
 for(lang in colnames(txt)) {
+  cat("\n\tMapping ", lang)
+  gif.output <- paste0("terrorismDeathMap_", lang, ifelse(dev == T, "_dev", ""), ".gif")
+  html.output <- paste0("terrorismDeathMap_", lang, ifelse(dev == T, "_dev", ""), ".html")
   saveGIF({
     for(ym in yearMonths) {
       plotSingleTime(dm, labels, euro, ym, txt, lang)
     }
-  },  movie.name = paste0("terrorismDeathMap_", lang, ifelse(dev == T, "_dev", ""), ".gif"), 
-  interval = 1.2, ani.width = 660 * 2, ani.height = 660 * 1.15, loop = TRUE)  
+  },  movie.name = gif.output, 
+  interval = 1, ani.width = 660 * 2, ani.height = 660 * 1.5, loop = TRUE)
+  
+  save_html(
+    tags$html(
+    # tags$head(includeCSS("image.css")),
+      tags$body(    
+        div(img(src = gif.output, width= "100%")),
+        HTML(iframeresizer)  
+      )), file = html.output, libdir = "js"#, background = '#1A0100'
+  )
+    
+    
 }
 
 ```
 
-```{r find events only in Europe}
+```{r find events only in Europe, eval = F}
 if(dev) {
  ddd <- data %>% filter(iyear >= 2012, nkill > 0, !is.na(longitude)) %>%
    filter(region == 8) %>% arrange(desc(nkill)) %>% 
@@ -235,7 +268,6 @@ if(dev) {
    group_by(date, yearMonth) %>%
    summarise(lat = mean(latitude), lon = mean(longitude), country = unique(country_txt)) %>% ungroup()   
    write_csv(path = "~/Desktop/tmp.csv")
-   
 }
 
 ```

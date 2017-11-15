@@ -280,12 +280,12 @@ stopifnot(dd$group %in% orderGroup)
 
 # define colors
 colors <- levels(dd$group2)
-tmp <- ifelse(colors %in% top5, '#b30018', NA)
+tmp <- ifelse(colors %in% top5, '#4b020b', NA)
 #tmp[is.na(tmp)] <- brewer_pal(palette = "Greys", direction = -1)(9)[-9]
 tmp[is.na(tmp)] <- colorRampPalette(colors = brewer_pal(palette = "Reds", direction = -1)(9)[-c(8,9)])(8)
 colors <- structure(colors, names = tmp)
 
-plotArea <- function(dd, iso) {
+plotArea <- function(dd, iso, txt, lang) {
 
   ddd <- dd[which(dd$group == iso),]
   
@@ -337,25 +337,29 @@ plotArea <- function(dd, iso) {
     hc_tooltip(table = T, crosshairs = TRUE)
 }
 
+for (lang in colnames(txt)) {
+  plots <- lapply(orderGroup, function(iso) plotArea(dd, iso, txt, lang))
+  
+  source <- paste0(
+    txt['source', lang], ": ", htmlLink( "https://www.start.umd.edu/gtd/", txt['source.name', lang] ),
+    " | swissinfo.ch"
+  )
+  
+  save_html(
+    tags$html(
+      dir = ifelse(lang == "AR", "rtl", "ltr"),
+      tags$head(includeHTML(style_swi_highcharter())),
+      tags$h2(HTML(txt["title2", lang])),
+      div(class = "descr", HTML(paste0('<img src="https://interactive.swissinfo.ch/assets/Interactive_icon.svg.png" width="12" align="top">&nbsp; ', txt["description", lang]))),
+      tags$h3(HTML(txt['h3', lang])),
+      div(class = "graphic", hw_grid(plots, ncol = 2, rowheight = chart.height)),
+      div(id = "cite", HTML(source)),
+      HTML(iframeresizer)  
+    ),
+    file =  paste0("terrorismDeath_area_", lang, ".html"), libdir = "js")    
+}
 
-plots <- lapply(orderGroup, function(iso) plotArea(dd, iso))
 
-source <- paste0(
-  txt['source', lang], ": ", htmlLink( "https://www.start.umd.edu/gtd/", txt['source.name', lang] ),
-  " | swissinfo.ch"
-)
-
-save_html(
-  tags$html(
-    tags$head(includeHTML(style_swi_highcharter())),
-    tags$h2(HTML(txt["title2", lang])),
-    div(class = "descr", HTML(paste0('<img src="https://interactive.swissinfo.ch/assets/Interactive_icon.svg.png" width="12" align="top">&nbsp; ', txt["description", lang]))),
-    tags$h3(HTML(txt['h3', lang])),
-    div(class = "graphic", hw_grid(plots, ncol = 2, rowheight = chart.height)),
-    div(id = "cite", HTML(source)),
-    HTML(iframeresizer)  
-  ),
-  file =  paste0("terrorismDeath_area_", lang, ".html"), libdir = "js")  
     
     
 

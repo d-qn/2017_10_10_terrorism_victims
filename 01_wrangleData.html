@@ -223,9 +223,9 @@ $(document).ready(function () {
 ## row # A tibble: 5 x 5 col     row      col               expected actual                     file expected   &lt;int&gt;    &lt;chr&gt;                  &lt;chr&gt;  &lt;chr&gt;                    &lt;chr&gt; actual 1  8171 nhostkid no trailing characters     e3 'input/GTD_0617dist.csv' file 2 18624 nhostkid no trailing characters     e3 'input/GTD_0617dist.csv' row 3 19476 nhostkid no trailing characters     e3 'input/GTD_0617dist.csv' col 4 19824 nhostkid no trailing characters     e4 'input/GTD_0617dist.csv' expected 5 19825 nhostkid no trailing characters     e3 'input/GTD_0617dist.csv'
 ## ... ................. ... ....................................................................... ........ ....................................................................... ...... ....................................................................... .... ....................................................................... ... ....................................................................... ... ....................................................................... ........ .......................................................................
 ## See problems(...) for more details.</code></pre>
-<pre><code>## Warning in loadTranslation(translation.file): EN DE  IT  PT  AR  RU  ES  JA  ZH languages will be discarded!</code></pre>
+<pre><code>## Warning in loadTranslation(translation.file): JA languages will be discarded!</code></pre>
 <pre><code>## 
-##  Remaining column names:  FR</code></pre>
+##  Remaining column names:  EN FR DE IT PT AR RU ES ZH</code></pre>
 </div>
 <div id="table-summary" class="section level2">
 <h2>Table summary</h2>
@@ -400,12 +400,12 @@ stopifnot(dd$group %in% orderGroup)
 
 # define colors
 colors &lt;- levels(dd$group2)
-tmp &lt;- ifelse(colors %in% top5, '#b30018', NA)
+tmp &lt;- ifelse(colors %in% top5, '#4b020b', NA)
 #tmp[is.na(tmp)] &lt;- brewer_pal(palette = &quot;Greys&quot;, direction = -1)(9)[-9]
 tmp[is.na(tmp)] &lt;- colorRampPalette(colors = brewer_pal(palette = &quot;Reds&quot;, direction = -1)(9)[-c(8,9)])(8)
 colors &lt;- structure(colors, names = tmp)
 
-plotArea &lt;- function(dd, iso) {
+plotArea &lt;- function(dd, iso, txt, lang) {
 
   ddd &lt;- dd[which(dd$group == iso),]
   
@@ -457,25 +457,28 @@ plotArea &lt;- function(dd, iso) {
     hc_tooltip(table = T, crosshairs = TRUE)
 }
 
+for (lang in colnames(txt)) {
+  plots &lt;- lapply(orderGroup, function(iso) plotArea(dd, iso, txt, lang))
+  
+  source &lt;- paste0(
+    txt['source', lang], &quot;: &quot;, htmlLink( &quot;https://www.start.umd.edu/gtd/&quot;, txt['source.name', lang] ),
+    &quot; | swissinfo.ch&quot;
+  )
+  
+  save_html(
+    tags$html(
+      dir = ifelse(lang == &quot;AR&quot;, &quot;rtl&quot;, &quot;ltr&quot;),
+      tags$head(includeHTML(style_swi_highcharter())),
+      tags$h2(HTML(txt[&quot;title2&quot;, lang])),
+      div(class = &quot;descr&quot;, HTML(paste0('&lt;img src=&quot;https://interactive.swissinfo.ch/assets/Interactive_icon.svg.png&quot; width=&quot;12&quot; align=&quot;top&quot;&gt;&amp;nbsp; ', txt[&quot;description&quot;, lang]))),
+      tags$h3(HTML(txt['h3', lang])),
+      div(class = &quot;graphic&quot;, hw_grid(plots, ncol = 2, rowheight = chart.height)),
+      div(id = &quot;cite&quot;, HTML(source)),
+      HTML(iframeresizer)  
+    ),
+    file =  paste0(&quot;terrorismDeath_area_&quot;, lang, &quot;.html&quot;), libdir = &quot;js&quot;)    
+}
 
-plots &lt;- lapply(orderGroup, function(iso) plotArea(dd, iso))
-
-source &lt;- paste0(
-  txt['source', lang], &quot;: &quot;, htmlLink( &quot;https://www.start.umd.edu/gtd/&quot;, txt['source.name', lang] ),
-  &quot; | swissinfo.ch&quot;
-)
-
-save_html(
-  tags$html(
-    tags$head(includeHTML(style_swi_highcharter())),
-    tags$h2(HTML(txt[&quot;title2&quot;, lang])),
-    div(class = &quot;descr&quot;, HTML(paste0('&lt;img src=&quot;https://interactive.swissinfo.ch/assets/Interactive_icon.svg.png&quot; width=&quot;12&quot; align=&quot;top&quot;&gt;&amp;nbsp; ', txt[&quot;description&quot;, lang]))),
-    tags$h3(HTML(txt['h3', lang])),
-    div(class = &quot;graphic&quot;, hw_grid(plots, ncol = 2, rowheight = chart.height)),
-    div(id = &quot;cite&quot;, HTML(source)),
-    HTML(iframeresizer)  
-  ),
-  file =  paste0(&quot;terrorismDeath_area_&quot;, lang, &quot;.html&quot;), libdir = &quot;js&quot;)  
     
     
 

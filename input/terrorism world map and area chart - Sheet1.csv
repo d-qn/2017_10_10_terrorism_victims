@@ -1,39 +1,39 @@
 code,EN,FR,DE,IT,PT,AR,RU,ES,JA,ZH
-title,,La géographie du terrorisme de 2012 à 2016,,La geografia del terrorismo dal 2012 al 2016,,,,,,
-descr1,,morts,,morti,,,,,,
-descr1b,,attaques,,attacchi,,,,,,
-descr2,,depuis 2012:,,dal 2012:,,,,,,
-1,Jan,janv.,,gen.,,,,,,
-2,Feb,févr.,,feb.,,,,,,
-3,Mar,mars,,mar.,,,,,,
-4,Apr,avr.,,apr.,,,,,,
-5,May,mai,,mag.,,,,,,
-6,Jun,juin,,giu.,,,,,,
-7,Jul,juill.,,lug.,,,,,,
-8,Aug,août,,ago.,,,,,,
-9,Sep,sept.,,set.,,,,,,
-10,Oct,oct.,,ott.,,,,,,
-11,Nov,nov.,,nov.,,,,,,
-12,Dec,déc.,,dic.,,,,,,
-a,Paris (Charlie Hebdo),Paris (Charlie Hebdo),,Parigi (Charlie Hebdo),,,,,,
-b,Paris (Bataclan & 10th Arrondissement),Paris (Bataclan & 10ème arrondissement),,Parigi (Bataclan e X arrondissement),,,,,,
-c,Bruxelles,Bruxelles,,Bruxelles,,,,,,
-d,Nice (Bastille day),Nice (14 juillet),,Nizza (14 luglio),,,,,,
-e,Munich,Munich,,Monaco di Baviera,,,,,,
-f,Berlin,Berlin,,Berlino,,,,,,
-title2,,"Depuis 2012, plus de 70% des morts du terrorisme se concentrent dans cinq pays",,,,,,,,
-description,,"Morts annuels du terrorisme de 2012 à 2016, selon le pays ou les régions du monde",,,,,,,,
-h3,,"Moins de 0,3% des victimes depuis 2012 sont mortes en Europe de l'Ouest",,,,,,,,
-EasternEurope,Eastern Europe,Europe de l'Est,,,,,,,,
-MiddleEast&NorthAfrica,Middle East & North Africa,Moyen-Orient et Afrique du Nord,,,,,,,,
-Restoftheworld,Rest of the world,Reste du monde,,,,,,,,
-SouthAmerica,South America,Amérique du sud,,,,,,,,
-SouthAsia,South Asia,Asie du sud,,,,,,,,
-SoutheastAsia,Southeast Asia,Asie du sud est,,,,,,,,
-Sub-SaharanAfrica,Sub-Saharan Africa,Afrique sub-saharienne,,,,,,,,
-WesternEurope,Western Europe,Europe de l'Ouest,,,,,,,,
+title,Terrorist attacks between 2012 and 2016,La géographie du terrorisme de 2012 à 2016,Die Geografie des Terrorismus 2012 bis 2016,La geografia del terrorismo dal 2012 al 2016,A geografia do terrorismo de 2012 a 2016,Terrorist attacks between 2012 and 2016,География терроризма в период с 2012 по 2016 гг.,La geografía del terrorismo del 2012 al 2016,,2012-2016年恐袭地图
+descr1,deaths,morts,Tote,morti,mortos,deaths,Погибшие,muertos,,死亡人数
+descr1b,attacks,attaques,Anschläge,attacchi,ataques,attacks,Число терактов,ataques,,恐袭次数
+descr2,Since 2012:,depuis 2012:,seit 2012:,dal 2012:,desde 2012,Since 2012:,начиная с 2012 г.,en 2012,,自2012年：
+1,Jan,janv.,Jan.,gen.,Jan.,Jan,Январь,ene.,,一月
+2,Feb,févr.,Febr.,feb.,Fev.,Feb,Февраль,feb.,,二月
+3,Mar,mars,März,mar.,Março,Mar,Март,mar.,,三月
+4,Apr,avr.,April,apr.,Abril,Apr,Апрель,abr.,,四月
+5,May,mai,Mai,mag.,Maio,May,Май,may.,,五月
+6,Jun,juin,Juni,giu.,Junho,Jun,Июнь,jun.,,六月
+7,Jul,juill.,Juli,lug.,Julho,Jul,Июль,jul.,,七月
+8,Aug,août,Aug.,ago.,Ago.,Aug,Август,ago.,,八月
+9,Sep,sept.,Sept.,set.,Set.,Sep,Сентябрь,sep.,,九月
+10,Oct,oct.,Okt.,ott.,Out.,Oct,Октябрь,oct.,,十月
+11,Nov,nov.,Nov.,nov.,Nov.,Nov,Ноябрь,nov.,,十一月
+12,Dec,déc.,Dez.,dic.,Dez.,Dec,Декабрь,dic.,,十二月
+a,Paris (Charlie Hebdo),Paris (Charlie Hebdo),Paris (Charlie Hebdo),Parigi (Charlie Hebdo),Paris (Charlie Hebdo) ,Paris (Charlie Hebdo),Париж («Шарли Эбдо»),París (Charlie Hebdo),,巴黎(查理周刊)
+b,Paris (Bataclan & 10th Arrondissement),Paris (Bataclan & 10ème arrondissement),Paris (Bataclan & 10. Arrondissement,Parigi (Bataclan e X arrondissement),Paris (Bataclan e 10.o arrondissement),Paris (Bataclan & 10th Arrondissement),Париж (клуб «Батаклан»),París (Bataclan y X arrondissement),,巴黎(巴塔克兰剧场及第十街区)
+c,Brussels,Bruxelles,Brüssel,Bruxelles,Bruxelas,Brussels,Брюссель,Bruselas,,布鲁塞尔
+d,Nice (Bastille Day),Nice (14 juillet),Nizza (14. Juli),Nizza (14 luglio),Nice (14 de julho),Nice (Bastille Day),Ницца (14.07.),Niza (14 julio),,尼斯(7月14日)
+e,Munich,Munich,München,Monaco di Baviera,Munique,Munich,Мюнхен,Múnich,,慕尼黑
+f,Berlin,Berlin,Berlin,Berlino,Berlin,Berlin,Берлин,Berlín,,柏林
+title2,"Since 2012, more than 70% of deaths from terrorism have occurred in 5 countries.","Depuis 2012, plus de 70% des morts du terrorisme se concentrent dans cinq pays",Seit 2012 konzentrieren sich 70% der Terrortoten auf fünf Länder,"Dal 2012, oltre il 70% dei morti causati dal terrorismo si concentrano in 5 paesi.","Desde 2012, mais de 70% dos mortos por terrorismo concentram-se em cinco países",منذ 2012، انحصر أكثر من 70% من القتلى جراء الإرهاب في خمسة بلدان ,В период с 2012 года более 70% жертв терроризма пришлись только на пять стран,"Desde 2012, más de 70% de las muertes por terrorismo se concentran en cinco países",,自2012起，70%恐袭遇难者集中在5个国家
+description,"Annual deaths from terrorism from 2012 to 2016, by country and region","Morts annuels du terrorisme de 2012 à 2016, selon le pays ou les régions du monde",Terrortote pro Jahr von 2012 bis 2016 nach Ländern oder Regionen,"Morti annuali dovuti al terrorismo dal 2012 al 2016, a seconda del paese o delle regioni del mondo","Mortes anuais por terrorismo de 2012 a 2016, por país ou regiões do mundo",عدد القتلى سنويا جراء الإرهاب من 2012 إلى 2016، حسب البلد أو مناطق العالم,"Ежегодное число погибших в результате терактов в период с 2012 по 2016 год, по странам или регионам мира","Muertes anuales por terrorismo del 2012 al 2016, según el país o la región del mundo",,2012-2016年根据国家和地区不同，每年恐袭遇难者的人数
+h3,Fewer than 0.3% of terror victims since 2012 died in Western Europe,"Moins de 0,3% des victimes depuis 2012 sont mortes en Europe de l'Ouest","Weniger als 0,3% der Opfer seit 2012 wurden in Westeuropa getötet","Meno dello 0,3% delle vittime dal 2012 sono morte nell'Europa occidentale","Menos de 0,3% das vítimas desde 2012 morreram na Europa ocidental",منذ عام 2012، قُتل أقل من 0.3% من الضحايا في أوروبا الغربية,"В период с 2012 года по настоящее время в Зап. Европе были зарегистрированы только 0,3% от общего числа жертв терактов в мире","Menos de 0,3% de las víctimas fueron muertas en Europa Occidental desde 2012",,自2012年起，只有少于0.3%的恐袭牺牲者来自西欧国家
+EasternEurope,Eastern Europe,Europe de l'Est,Osteuropa,Europa orientale,Europa do Leste,أوروبا الشرقية,Восточная Европа,Europa Oriental,,东欧
+MiddleEast&NorthAfrica,Middle East & North Africa,Moyen-Orient et Afrique du Nord,Naher Osten und Nordafrika,Medio Oriente e Nordafrica,Oriente Médio e norte da África,الشرق الأوسط وشمال افريقيا ,Ближний Восток и Сев. Африка,Oriente Cercano y África del Norte,,近东和北非
+Restoftheworld,Rest of the world,Reste du monde,Rest der Welt,Resto del mondo,Resto do mundo,باقي العالم,Остальной мир,Resto del mundo,,世界其他地区
+SouthAmerica,South America,Amérique du Sud,Südamerika,America del sud,América do Sul,أمريكا الجنوبية ,ЮАР,América del Sur,,南美
+SouthAsia,South Asia,Asie du Sud,Südasien,Asia del sud,Sul da Ásia,جنوب آسيا,Ю. Азия,Asia del Sur,,南亚
+SoutheastAsia,Southeast Asia,Asie du Sud-Est,Südostasien,Asia del sud-est,Sudeste Asiático,جنوب شرق آسيا ,Ю-В Азия,Asia del Sur Oriental,,东南亚
+Sub-SaharanAfrica,Sub-Saharan Africa,Afrique subsaharienne,Subsahara-Afrika,Africa subsahariana,África sub-saariana,أفريقيا جنوب الصحراء ,Тропическая Африка,África Subsahariana,,撒哈拉以南非洲
+WesternEurope,Western Europe,Europe de l'Ouest,Westafrika,Europa occidentale,Europa Ocidental,أوروبا الغربية,Западная Европа,Europa Occidental,,西非
 source,Source,source,Quelle,Fonte,fonte,المصدر,Источник,Fuente,出典,来源
-source.name,Global Terrorism Database,Global Terrorism Database,,Global Terrorism Database,,,,,,
+source.name,Global Terrorism Database,Global Terrorism Database,Global Terrorism Database,Global Terrorism Database,Global Terrorism Database,قاعدة البيانات الدولية للإرهاب,Global Terrorism Database,Global Terrorism Database,,全球恐袭数据库
 code,Code,code,Code,Codice,código,الرمز,Код,código,コード,代码
 base.font,OpenSans-CondensedLight,OpenSans-CondensedLight,OpenSans-CondensedLight,OpenSans-CondensedLight,OpenSans-CondensedLight,OpenSans-CondensedLight,OpenSans-CondensedLight,OpenSans-CondensedLight,PingFang SC Semibold,PingFang SC Semibold
 title.font,OpenSans-CondensedBold,OpenSans-CondensedBold,OpenSans-CondensedBold,OpenSans-CondensedBold,OpenSans-CondensedBold,OpenSans-CondensedBold,OpenSans-CondensedBold,OpenSans-CondensedBold,Hiragino Sans W1,PingFang SC Light
