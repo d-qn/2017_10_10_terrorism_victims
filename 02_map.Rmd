@@ -1,5 +1,5 @@
 ---
-title: ""
+title: "Map terrorism"
 author: "Duc-Quang Nguyen | swissinfo.ch"
 date: " 2016"
 output: 
@@ -18,9 +18,9 @@ data.file <- "input/GTD_0617dist.csv"
 euro_events.file <- "input/terrorism world map - europeanEvents.csv"
 translation.file <- "input/terrorism world map and area chart - Sheet1.csv"
 
-lang2exclude <- ''
+lang2exclude <- c('AR', 'FR', 'DE', 'IT', 'RU', 'PT', 'ES', 'EN')
 
-dev <- T
+dev <- F
 cleanOutput <- F
 
 library(tidyverse)
@@ -48,7 +48,9 @@ require(viridis)
 data <- read_csv(data.file) 
 txt <- loadTranslation(translation.file)
 if(length(lang2exclude) > 0) {
-  
+  warning("\nAbout to discard languages: ", lang2exclude)
+  txt <- txt[,-match(lang2exclude, colnames(txt)), drop = F]
+  warning("\nLeft in txt:", colnames(txt))
 }
 euro <- read_csv(euro_events.file)
 
@@ -99,6 +101,7 @@ deathsByMonth <- dm %>% group_by(yearMonth) %>%
 
 #xlim <- quantile(dm$lon, probs = c(0, .99), na.rm = T) + c(-5, 5)
 xlim <- c(-129, 129)
+#xlim <- c(-89, 149)
 ylim <- c(-60, 140) #quantile(dm$lat, probs = c(0, 1), na.rm = T) + c(-1, 1)
 topMargin <- 30
 
@@ -139,8 +142,9 @@ plotSingleTime <- function(dm, labels, euro, ym, txt, lang) {
   bg <- dm %>% filter(yearMonth < ym)
   stats.label <- deathsByMonth %>% filter(yearMonth == ym)
   euro.label <- euro %>% filter(yearMonth == ym)
-  sizeLabel <- if(lang %in% c('ZH', 'JA')) 5.5 else 6.3
-  
+  sizeLabel <- if(lang %in% c('ZH', 'JA')) 5.5 else 7
+  themeFontSize <- if(lang %in% c('ZH', 'JA')) 30 else 37
+    
   # translation & text
   if(nrow(euro.label) > 0) {
     euro.label %<>% mutate(label = txt[euro.label$id, lang])
@@ -166,7 +170,7 @@ plotSingleTime <- function(dm, labels, euro, ym, txt, lang) {
   caption <- paste0(txt['source', lang], ": ", txt['source.name', lang], " | swissinfo.ch | @duc_qn  ")
   
   p <- ggplot() + 
-    swi_dark_map(base_size = 20, base_family = txt['base.font', lang], 
+    swi_dark_map(base_size = themeFontSize, base_family = txt['base.font', lang], 
                  title_family = txt['title.font', lang], subtitle_family = txt['base.font', lang]) + 
     geom_map(
       data=world, map=world,
@@ -182,34 +186,35 @@ plotSingleTime <- function(dm, labels, euro, ym, txt, lang) {
       trans = "log1p", range = c(10^-8, 9), 
       breaks = c(10, 100, 1000), limits = range(dm$z), 
       guide = guide_legend(override.aes = list(fill = "#d09995"), title = txt['descr1', lang])) +
-    scale_alpha_continuous(range = c(0.001, 0.25), guide = F) +
+    scale_alpha_continuous(range = c(0.001, 0.1), guide = F) +
     theme(
-      legend.key.size = unit(1, "lines"),
+      legend.key.size = unit(2, "lines"),
       legend.position = c(0.05,0.07),
-      legend.key.height = unit(1.2, "lines"),
-      plot.title = element_text(hjust = 0.5, colour = "#f2f2f2",  margin=margin(b=topMargin, t = 10), 
-                                size =  38),
-      plot.subtitle = element_text(hjust = 0.5, size = 43),
+      legend.key.height = unit(2.8, "lines"),
+      plot.title = element_text(hjust = 0.5, colour = "#f2f2f2",
+                                margin=margin(b=topMargin, t = 10), 
+                                size =  44),
+      plot.subtitle = element_text(hjust = 0.5, size = 50),
       plot.margin = unit(c(0.5, 0, 0.2, 0), "cm"),
       plot.background = element_rect(fill = "#595959", size = 0, color = "#595959"),
       panel.background = element_rect(fill = "#595959", size = 0, color =  "#595959"),
-      plot.caption = element_text(size = 18, hjust=1, margin=margin(t=13, b=10, r=25), color = '#f2f2f2')
+      plot.caption = element_text(size = 26, hjust=1, margin=margin(t=13, b=10, r=25), color = '#f2f2f2')
     ) + 
     geom_text_repel(
       data = labels, aes(x = lon, y = lat, label = label), 
-      colour = "white", segment.alpha = 0.4, force = 2,
+      colour = "white", segment.alpha = 0.6, force = 2,
       alpha = 0.9, nudge_x = -9, nudge_y = -6.6, family = txt['base.font', lang], size = sizeLabel) +
     labs(title = txt['title', lang], caption = caption, subtitle = paste0(yearMonth, "  ", subtitle))
   
   p <- p + annotate(geom = "text", x = 0, y = 85, label = subtitle2,
-                    family = txt['base.font', lang], size = 9, 
+                    family = txt['base.font', lang], size = 11, 
                     colour = "white", hjust = 0.5, vjust = 1, alpha = 0.8)
    #print(p)
   if(nrow(euro.label) > 0) {
     p2 <- p + 
       geom_text_repel(
        data = euro.label, aes(x = lon, y = lat, label = label), 
-        colour = "white", segment.alpha = 0.5, force = 2,
+        colour = "white", segment.alpha = 0.6, force = 2,
         alpha = 0.95, nudge_x = 5, nudge_y = 6, family = txt['base.font', lang], size = sizeLabel)
     print(p2)
   } else {
@@ -236,7 +241,7 @@ for(lang in colnames(txt)) {
       plotSingleTime(dm, labels, euro, ym, txt, lang)
     }
   },  movie.name = gif.output, 
-  interval = 1, ani.width = 660 * 2, ani.height = 660 * 1.5, loop = TRUE)
+  interval = 1, ani.width = 660 * 2, ani.height = 660 * 1.55, loop = TRUE)
   
   save_html(
     tags$html(
